@@ -1,0 +1,141 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "HandleNullSalary",
+					"description": "Handling missing salary"
+				},
+				{
+					"name": "removeDuplicates"
+				},
+				{
+					"name": "StandardizeDepartment"
+				},
+				{
+					"name": "SumOfSalaryPerDept"
+				},
+				{
+					"name": "avgSalaryPerDept"
+				},
+				{
+					"name": "AddSalaryCategoryColumn"
+				},
+				{
+					"name": "removeZeroSalary"
+				},
+				{
+					"name": "SalaryCategoryCount"
+				},
+				{
+					"name": "join1"
+				},
+				{
+					"name": "join2"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "pivot1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EmployeeID as integer,",
+				"          Name as string,",
+				"          Department as string,",
+				"          Salary as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"removeDuplicates derive(Salary = coalesce(Salary,0)) ~> HandleNullSalary",
+				"source1 aggregate(groupBy(EmployeeID),",
+				"     Name = first(Name),",
+				"          Department = first(Department),",
+				"          Salary = first(Salary)) ~> removeDuplicates",
+				"HandleNullSalary derive(Department = replace(upper(trim(Department)),' ','_')) ~> StandardizeDepartment",
+				"StandardizeDepartment aggregate(groupBy(Department),",
+				"     totalSalary = sum(Salary)) ~> SumOfSalaryPerDept",
+				"StandardizeDepartment aggregate(groupBy(Department),",
+				"     avgSalary = avg(Salary)) ~> avgSalaryPerDept",
+				"StandardizeDepartment derive(SalaryCategory = case(\r",
+				"    Salary < 3000, 'LowCount',\r",
+				"    Salary <= 7000, 'MediumCount',\r",
+				"    'HighCount'\r",
+				")) ~> AddSalaryCategoryColumn",
+				"AddSalaryCategoryColumn filter(Salary != 0) ~> removeZeroSalary",
+				"removeZeroSalary aggregate(groupBy(Department,",
+				"          {SalaryCategory } = SalaryCategory),",
+				"     SalaryCategoryCount = count(SalaryCategory)) ~> SalaryCategoryCount",
+				"SalaryCategoryCount, SumOfSalaryPerDept join(SalaryCategoryCount@Department == SumOfSalaryPerDept@Department,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1, avgSalaryPerDept join(SumOfSalaryPerDept@Department == avgSalaryPerDept@Department,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join2",
+				"join2 select(mapColumn(",
+				"          Department = SalaryCategoryCount@Department,",
+				"          {SalaryCategory },",
+				"          SalaryCategoryCount,",
+				"          Department = SumOfSalaryPerDept@Department,",
+				"          totalSalary,",
+				"          Department = avgSalaryPerDept@Department,",
+				"          avgSalary",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 pivot(groupBy(Department,",
+				"          totalSalary,",
+				"          avgSalary),",
+				"     pivotBy({SalaryCategory }),",
+				"     {} = sum(SalaryCategoryCount),",
+				"     columnNaming: '$N$V',",
+				"     lateral: false) ~> pivot1",
+				"pivot1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Department as string,",
+				"          totalSalary as long,",
+				"          avgSalary as decimal(18,2),",
+				"          HighCount as integer,",
+				"          LowCount as integer,",
+				"          MediumCount as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+			]
+		}
+	}
+}

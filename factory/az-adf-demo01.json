@@ -1,0 +1,9 @@
+{
+	"name": "az-adf-demo01",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "02ec2c8d-9917-47b0-adac-e5f3fcc41f86",
+		"tenantId": "656b1c41-afbf-4129-9e74-90809fb2827b"
+	}
+}

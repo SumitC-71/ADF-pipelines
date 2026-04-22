@@ -1,0 +1,48 @@
+{
+	"name": "AzureSqlTable1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Department",
+				"type": "varchar"
+			},
+			{
+				"name": "totalSalary",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "avgSalary",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "HighCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "LowCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "MediumCount",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "DepartmentSalarySummary"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
