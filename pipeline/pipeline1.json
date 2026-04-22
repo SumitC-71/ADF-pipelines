@@ -25,8 +25,30 @@
 					},
 					"traceLevel": "Fine"
 				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Data flow1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": []
 			}
 		],
+		"variables": {
+			"test": {
+				"type": "String"
+			}
+		},
 		"annotations": [],
 		"lastPublishTime": "2026-04-22T10:47:40Z"
 	},
